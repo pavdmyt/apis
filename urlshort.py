@@ -73,8 +73,9 @@ def validate_url(url):
 def parse_args(api_token):
     """CLI interface."""
     required = not bool(api_token)
+    descr = "This script uses Bitly API to shorten given URLs."
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=descr)
     parser.add_argument('long_url',
                         help='URL to shorten')
     parser.add_argument('--api-token',
