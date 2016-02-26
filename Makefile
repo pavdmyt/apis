@@ -1,5 +1,5 @@
 flake:
-	flake8 urlshort.py
+	flake8 urlshort.py forecast.py
 
 clean:
 	rm -rf `find . -name __pycache__`
