@@ -4,7 +4,6 @@ A CLI tool to shorten URLs using Bitly API
 Source: https://github.com/pavdmyt/apis
 """
 import argparse
-import logging
 
 import urllib.request as urequest
 import urllib.parse as uparse
@@ -96,7 +95,6 @@ def main():
         print("* Failed to establish network connection.")
         return
     opts = parse_args(TOKEN)
-    logging.basicConfig(level=logging.INFO)
 
     # API init.
     if TOKEN:
