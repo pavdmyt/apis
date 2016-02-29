@@ -8,7 +8,6 @@ import logging
 
 import urllib.request as urequest
 import urllib.parse as uparse
-from urllib.error import HTTPError
 
 
 # Put your Bitly token here, otherwise provide it via
@@ -51,7 +50,8 @@ class BitlyAPI:
                 short_url = resp.read()
                 return short_url.decode().rstrip()
         except Exception as e:
-            print("\n* Error occured: {}\n".format(e))
+            print("\n* Error occured while communicating with Bitly: {}\n"
+                  .format(e))
 
 
 # === Helper functions ===
@@ -59,15 +59,21 @@ class BitlyAPI:
 def validate_url(url):
     """Checks that given url is a valid URL."""
     try:
-        with urequest.urlopen(url) as test:
-            return True
-    except HTTPError as e:
-        if e.getcode() == 403:
-            logging.warn(" web server returned '403 Forbidden'")
-            return True
-        print("\n* Error occured: {}".format(e))
+        urequest.Request(url)
+        return True
+    except ValueError as e:
+        print("\n* Error occured while validating given URL: {}".format(e))
+
+
+def internet_on():
+    """Checks that internet connection is available."""
+    remote = 'http://google.com'
+    try:
+        urequest.urlopen(remote)
+        return True
     except Exception as e:
-        print("\n* Error occured: {}".format(e))
+        print("\n* Error occured while checking internet connection: {}\n"
+              .format(e))
 
 
 def parse_args(api_token):
@@ -86,6 +92,9 @@ def parse_args(api_token):
 
 
 def main():
+    if not internet_on():
+        print("* Failed to establish network connection.")
+        return
     opts = parse_args(TOKEN)
     logging.basicConfig(level=logging.INFO)
 
