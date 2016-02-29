@@ -78,15 +78,15 @@ def internet_on():
 
 def parse_args(api_token):
     """CLI interface."""
-    required = not bool(api_token)
     descr = "This script uses Bitly API to shorten given URLs."
 
     parser = argparse.ArgumentParser(description=descr)
     parser.add_argument('long_url',
                         help='URL to shorten')
-    parser.add_argument('--api-token',
-                        required=required,
-                        help='API token provided by bit.ly')
+    if not TOKEN:
+        parser.add_argument('--api-token',
+                            required=True,
+                            help='API token provided by bit.ly')
     opts = parser.parse_args()
     return opts
 
