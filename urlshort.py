@@ -1,13 +1,19 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 A CLI tool to shorten URLs using Bitly API
 Source: https://github.com/pavdmyt/apis
 """
 import argparse
+import sys
 
-import urllib.request as urequest
-import urllib.parse as uparse
+from contextlib import closing
 
+try:
+    import urllib2 as urequest
+    import urllib as uparse
+except ImportError:
+    import urllib.request as urequest
+    import urllib.parse as uparse
 
 # Put your Bitly token here, otherwise provide it via
 # --api-token argument.
@@ -45,7 +51,7 @@ class BitlyAPI:
 
         # Send request.
         try:
-            with urequest.urlopen(req) as resp:
+            with closing(urequest.urlopen(req)) as resp:
                 short_url = resp.read()
                 return short_url.decode().rstrip()
         except Exception as e:
@@ -58,7 +64,9 @@ class BitlyAPI:
 def validate_url(url):
     """Checks that given url is a valid URL."""
     try:
-        urequest.Request(url)
+        req = urequest.Request(url)
+        if sys.version < '3':
+            req.get_host()
         return True
     except ValueError as e:
         print("\n* Error occured while validating given URL: {}".format(e))
@@ -68,8 +76,8 @@ def internet_on():
     """Checks that internet connection is available."""
     remote = 'http://google.com'
     try:
-        urequest.urlopen(remote)
-        return True
+        with closing(urequest.urlopen(remote)) as test:
+            return True
     except Exception as e:
         print("\n* Error occured while checking internet connection: {}\n"
               .format(e))
