@@ -4,6 +4,8 @@ A CLI tool to shorten URLs using Bitly API
 Source: https://github.com/pavdmyt/apis
 """
 import argparse
+import json
+import os
 import sys
 
 from contextlib import closing
@@ -18,6 +20,10 @@ except ImportError:
 # Put your Bitly token here, otherwise provide it via
 # --api-token argument.
 TOKEN = ''
+
+XDG_CACHE_DIR = os.environ.get('XDG_CACHE_HOME',
+                               os.path.join(os.path.expanduser('~'), '.cache'))
+CACHE_FILE = os.path.join(XDG_CACHE_DIR, 'urlshort_cache.json')
 
 
 class BitlyAPI:
@@ -83,6 +89,18 @@ def internet_on():
               .format(e))
 
 
+def load_cache():
+    """Loads cached data from JSON file into the dict."""
+    with open(CACHE_FILE, 'r') as fp:
+        return json.load(fp)
+
+
+def write_cache(cache_dct):
+    """Write cache dict to JSON."""
+    with open(CACHE_FILE, 'w') as fp:
+        json.dump(cache_dct, fp)
+
+
 def parse_args(api_token):
     """CLI interface."""
     descr = "This script uses Bitly API to shorten given URLs."
@@ -110,8 +128,23 @@ def main():
     else:
         api = BitlyAPI(opts.api_token)
 
+    # Load cache.
+    try:
+        cached_data = load_cache()
+    except FileNotFoundError:
+        print('\n* The file "{0}" does not exist: creating it.'
+              .format(CACHE_FILE))
+        open(CACHE_FILE, 'a').close()
+        cached_data = {}
+
     # Result.
-    result = api.shorten(opts.long_url)
+    if opts.long_url in cached_data:
+        result = cached_data[opts.long_url]
+    else:
+        result = api.shorten(opts.long_url)
+        cached_data[opts.long_url] = result
+        write_cache(cached_data)
+
     if result:
         print("\n{}".format(result))
 
