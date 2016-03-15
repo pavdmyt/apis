@@ -4,6 +4,7 @@ A CLI tool to shorten URLs using Bitly API
 Source: https://github.com/pavdmyt/apis
 """
 import argparse
+import errno
 import json
 import os
 import sys
@@ -131,11 +132,12 @@ def main():
     # Load cache.
     try:
         cached_data = load_cache()
-    except FileNotFoundError:
-        print('\n* The file "{0}" does not exist: creating it.'
-              .format(CACHE_FILE))
-        open(CACHE_FILE, 'a').close()
-        cached_data = {}
+    except IOError as e:
+        if e.errno == errno.ENOENT:
+            print('\n* The file "{0}" does not exist: creating it.'
+                  .format(CACHE_FILE))
+            open(CACHE_FILE, 'a').close()
+            cached_data = {}
 
     # Result.
     if opts.long_url in cached_data:
