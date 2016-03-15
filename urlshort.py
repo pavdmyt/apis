@@ -118,10 +118,11 @@ def parse_args(api_token):
 
 
 def main():
+    opts = parse_args(TOKEN)
+
     if not internet_on():
         print("* Failed to establish network connection.")
         return
-    opts = parse_args(TOKEN)
 
     # API init.
     if TOKEN:
