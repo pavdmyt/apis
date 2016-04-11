@@ -24,7 +24,6 @@ from docopt import docopt
 from tabulate import tabulate
 
 
-# TODO: add metadata to result tables.
 # TODO: add check of Internet connection.
 # TODO: add caching.
 
@@ -71,7 +70,9 @@ def parse_schedule(resp_json):
 
     Return table (list) with rows (tuples) of parsed data.
     """
-    schedule = resp_json['MRData']['RaceTable']['Races']
+    data = resp_json['MRData']['RaceTable']
+    meta = (data['season'],)
+    schedule = data['Races']
 
     table = []
     for item in schedule:
@@ -87,7 +88,7 @@ def parse_schedule(resp_json):
         country = circuit['Location']['country']
         row = (season, round, rname, date, time, cname, loc, country)
         table.append(row)
-    return table
+    return table, meta
 
 
 def parse_constructor_standings(resp_json):
@@ -95,7 +96,8 @@ def parse_constructor_standings(resp_json):
 
     Return table (list) with rows (tuples) of parsed data.
     """
-    data = resp_json['MRData']['StandingsTable']['StandingsLists'][0]  # meta
+    data = resp_json['MRData']['StandingsTable']['StandingsLists'][0]
+    meta = data['season'], data['round']
     standings = data['ConstructorStandings']
 
     table = []
@@ -109,7 +111,7 @@ def parse_constructor_standings(resp_json):
         nationality = constr['nationality']
         row = (pos, cname, nationality, points, wins)
         table.append(row)
-    return table
+    return table, meta
 
 
 def parse_driver_standings(resp_json):
@@ -117,7 +119,8 @@ def parse_driver_standings(resp_json):
 
     Return table (list) with rows (tuples) of parsed data.
     """
-    data = resp_json['MRData']['StandingsTable']['StandingsLists'][0]  # meta
+    data = resp_json['MRData']['StandingsTable']['StandingsLists'][0]
+    meta = data['season'], data['round']
     standings = data['DriverStandings']
 
     table = []
@@ -133,7 +136,7 @@ def parse_driver_standings(resp_json):
         cname = constr['name']
         row = (pos, dname, cname, points, wins)
         table.append(row)
-    return table
+    return table, meta
 
 
 def parse_race_results(resp_json):
@@ -141,7 +144,8 @@ def parse_race_results(resp_json):
 
     Return table (list) with rows (tuples) of parsed data.
     """
-    data = resp_json['MRData']['RaceTable']['Races'][0]  # meta
+    data = resp_json['MRData']['RaceTable']['Races'][0]
+    meta = data['season'], data['round'], data['raceName']
     results = data['Results']
 
     table = []
@@ -165,7 +169,7 @@ def parse_race_results(resp_json):
             time = ''
         row = (pos, num, dname, cname, laps, grid, time, status, points)
         table.append(row)
-    return table
+    return table, meta
 
 
 def parse_quali_results(resp_json):
@@ -173,7 +177,8 @@ def parse_quali_results(resp_json):
 
     Return table (list) with rows (tuples) of parsed data.
     """
-    data = resp_json['MRData']['RaceTable']['Races'][0]  # meta
+    data = resp_json['MRData']['RaceTable']['Races'][0]
+    meta = data['season'], data['round'], data['raceName']
     results = data['QualifyingResults']
 
     table = []
@@ -191,7 +196,7 @@ def parse_quali_results(resp_json):
         cname = constr['name']
         row = (pos, num, dname, cname, q1, q2, q3)
         table.append(row)
-    return table
+    return table, meta
 
 
 def main():
@@ -199,31 +204,39 @@ def main():
 
     if args['cal']:
         resp_json = get_cur_schedule().json()
-        table = parse_schedule(resp_json)
+        table, meta = parse_schedule(resp_json)
+        table_name = "{0} F1 Race Calendar".format(*meta)
         headers = ("Season", "Round", "Race Name", "Date", "Time", "Circuit",
                    "Locality", "Country")
 
     if args['stand'] and args['driver']:
         resp_json = get_cur_driver_standings().json()
-        table = parse_driver_standings(resp_json)
+        table, meta = parse_driver_standings(resp_json)
+        table_name = ("Driver standings. "
+                      "Season: {0} Round: {1}".format(*meta))
         headers = ("Pos", "Driver", "Constructor", "Points", "Wins")
 
     if args['stand'] and args['constructor']:
         resp_json = get_cur_constructor_standings().json()
-        table = parse_constructor_standings(resp_json)
+        table, meta = parse_constructor_standings(resp_json)
+        table_name = ("Constructor standings. "
+                      "Season: {0} Round: {1}".format(*meta))
         headers = ("Pos", "Constructor", "Nationality", "Points", "Wins")
 
     if args['res'] and args['race']:
         resp_json = get_cur_race_res().json()
-        table = parse_race_results(resp_json)
+        table, meta = parse_race_results(resp_json)
+        table_name = "Race Results. {0} {2}. Round: {1}".format(*meta)
         headers = ("Pos", "No", "Driver", "Constructor", "Laps", "Grid",
                    "Time", "Status", "Points")
 
     if args['res'] and args['quali']:
         resp_json = get_cur_quali_res().json()
-        table = parse_quali_results(resp_json)
+        table, meta = parse_quali_results(resp_json)
+        table_name = "Qualifying Results. {0} {2}. Round: {1}".format(*meta)
         headers = ("Pos", "No", "Driver", "Constructor", "Q1", "Q2", "Q3")
 
+    print("\n" + table_name)
     print(tabulate(table, headers=headers, tablefmt='fancy_grid'))
 
 
