@@ -1,14 +1,31 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-A client for Ergast API.
-Source: https://github.com/pavdmyt/apis
-"""
+
+'''F1 info. Client for Ergast API (http://ergast.com/mrd/).
+
+Usage:
+    ergast_api.py cal
+    ergast_api.py stand (driver | constructor)
+    ergast_api.py res (race | quali)
+    ergast_api.py -h | --help
+
+Arguments:
+    cal             Race calendar for the current season.
+    stand           Standings in the driver or constructor championships.
+    res             Most recent race or qualifying results.
+
+Options:
+    -h --help       Show this screen.
+
+'''
 import requests
 
+from docopt import docopt
+from tabulate import tabulate
 
-# TODO: add CLI interface.
-# TODO: add pretty printing of result tables.
+
+# TODO: add metadata to result tables.
+# TODO: add check of Internet connection.
 # TODO: add caching.
 
 # === API part ===
@@ -119,7 +136,7 @@ def parse_driver_standings(resp_json):
     return table
 
 
-def parse_rase_results(resp_json):
+def parse_race_results(resp_json):
     """Parse results of the most recent race.
 
     Return table (list) with rows (tuples) of parsed data.
@@ -178,14 +195,37 @@ def parse_quali_results(resp_json):
 
 
 def main():
-    pass
+    args = docopt(__doc__)
+
+    if args['cal']:
+        resp_json = get_cur_schedule().json()
+        table = parse_schedule(resp_json)
+        headers = ("Season", "Round", "Race Name", "Date", "Time", "Circuit",
+                   "Locality", "Country")
+
+    if args['stand'] and args['driver']:
+        resp_json = get_cur_driver_standings().json()
+        table = parse_driver_standings(resp_json)
+        headers = ("Pos", "Driver", "Constructor", "Points", "Wins")
+
+    if args['stand'] and args['constructor']:
+        resp_json = get_cur_constructor_standings().json()
+        table = parse_constructor_standings(resp_json)
+        headers = ("Pos", "Constructor", "Nationality", "Points", "Wins")
+
+    if args['res'] and args['race']:
+        resp_json = get_cur_race_res().json()
+        table = parse_race_results(resp_json)
+        headers = ("Pos", "No", "Driver", "Constructor", "Laps", "Grid",
+                   "Time", "Status", "Points")
+
+    if args['res'] and args['quali']:
+        resp_json = get_cur_quali_res().json()
+        table = parse_quali_results(resp_json)
+        headers = ("Pos", "No", "Driver", "Constructor", "Q1", "Q2", "Q3")
+
+    print(tabulate(table, headers=headers, tablefmt='fancy_grid'))
 
 
 if __name__ == '__main__':
-    # === Don't pull API too much! ===
-    # d_stand = get_cur_driver_standings().json()
-    # c_stand = get_cur_constructor_standings().json()
-    # sch = get_cur_schedule().json()
-    # race_res = get_cur_race_res().json()
-    # quali_res = get_cur_quali_res().json()
-    pass
+    main()
